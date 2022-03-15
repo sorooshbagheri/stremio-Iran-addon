@@ -18,17 +18,17 @@ builder.defineStreamHandler(({ type, id }) => {
   // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md
   [prefix, series, episode] = id.split(":");
 
-//   if (prefix === "kitsu" && series === "1555") {
-//     return Promise.resolve({ streams: getStreams(id) });
-//   }
-  return getStreams(id).then(streams => ({streams}))
+  //   if (prefix === "kitsu" && series === "1555") {
+  //     return Promise.resolve({ streams: getStreams(id) });
+  //   }
+  return getStreams(id).then((streams) => ({ streams }));
 });
 
 module.exports = builder.getInterface();
 
 const getStreams = function (id) {
   [_, series, episode] = id.split(":");
-  let streams = []
+  let streams = [];
   if (prefix === "kitsu" && series === "1555") {
     const baseURL = `http://dls2.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuuden/`;
     const range = [
@@ -44,6 +44,9 @@ const getStreams = function (id) {
           3,
           "0"
         )}.1080p.x265.WEBRip.AnimeRG.DonyayeSerial.mkv`,
+        behaviorHints: {
+          bingeGroup: "1080p.x265.WEBRip.AnimeRG.DonyayeSerial",
+        },
       },
       {
         title: "720p x265 mkv",
@@ -53,6 +56,9 @@ const getStreams = function (id) {
           3,
           "0"
         )}.720p.x265.DonyayeSerial.mkv`,
+        behaviorHints: {
+          bingeGroup: "720p.x265.DonyayeSerial",
+        },
       },
     ];
   }
