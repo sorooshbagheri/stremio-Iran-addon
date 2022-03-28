@@ -50,7 +50,7 @@ const getStreams = async function (id) {
           "0"
         )}.1080p.x265.WEBRip.AnimeRG.DonyayeSerial.mkv`,
         behaviorHints: {
-          bingeGroup: "1080p.x265.WEBRip.AnimeRG.DonyayeSerial",
+          bingeGroup: "Naruto.Shippuden.1080p.x265.WEBRip.AnimeRG.DonyayeSerial",
         },
       },
       {
@@ -62,7 +62,7 @@ const getStreams = async function (id) {
           "0"
         )}.720p.x265.DonyayeSerial.mkv`,
         behaviorHints: {
-          bingeGroup: "720p.x265.DonyayeSerial",
+          bingeGroup: "Naruto.Shippuden.720p.x265.DonyayeSerial",
         },
       },
     ];
