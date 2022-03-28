@@ -1,33 +1,5 @@
-const { addonBuilder } = require("stremio-addon-sdk");
-
-const got = (...args) => import('got').then(({default: got}) => got(...args));
-const cheerio = require("cheerio")
-
-// import got from "got";
-// import * as cheerio from "cheerio";
-
-// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
-const manifest = {
-  id: "community.DonyayeSerial",
-  version: "0.0.2",
-  catalogs: [],
-  resources: ["stream"],
-  types: ["movie", "series"],
-  name: "Iranian Servers",
-  description: "To stream from Iranian urls",
-  idPrefixes: ["kitsu", "tt"],
-};
-const builder = new addonBuilder(manifest);
-
-builder.defineStreamHandler(({ type, id }) => {
-  console.log("request for streams: " + type + " " + id);
-  // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md
-  [prefix, series, episode] = id.split(":");
-
-  return getStreams(id).then((streams) => ({ streams }));
-});
-
-module.exports = builder.getInterface();
+const got = (...args) => import("got").then(({ default: got }) => got(...args));
+const cheerio = require("cheerio");
 
 const getStreams = async function (id) {
   let streams = [];
@@ -87,7 +59,7 @@ const getStreams = async function (id) {
               title: "DVDRip-jlw mkv",
               url: `${baseURL}S${season.padStart(2, "0")}/${link}`,
               behaviorHints: {
-                bingeGroup: `The.Simpsons`,
+                bingeGroup: `The.Simpsons.S${season.padStart(2, "0")}`,
               },
             },
           ];
@@ -98,3 +70,5 @@ const getStreams = async function (id) {
   console.log(streams);
   return Promise.resolve(streams);
 };
+
+getStreams("tt0096697:5:1");
