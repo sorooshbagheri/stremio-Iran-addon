@@ -2,9 +2,25 @@ const { addonBuilder } = require("stremio-addon-sdk");
 
 const got = (...args) => import('got').then(({default: got}) => got(...args));
 const cheerio = require("cheerio")
+const fs = require('fs');
+
+var lib = {}
 
 // import got from "got";
 // import * as cheerio from "cheerio";
+
+const loadLib = ()=>{
+  fs.readFile('./lib.json',(err, jsonString) => {
+    if (err) {
+      console.log("File read failed:", err);
+      return 
+    }
+    console.log('Library imported successfully.');
+    lib = JSON.parse(jsonString);
+    // console.log(lib);
+  })
+}
+loadLib()
 
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
@@ -31,6 +47,13 @@ module.exports = builder.getInterface();
 
 const getStreams = async function (id) {
   let streams = [];
+
+  // check the offline library
+  if (lib[id]){
+    streams = lib[id];
+    console.log("Retrieved from library:", streams);
+    return Promise.resolve(streams);
+  }
 
   // Naruto Shippuden
   [prefix, series, episode] = id.split(":");
