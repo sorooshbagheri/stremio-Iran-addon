@@ -131,7 +131,7 @@ const getAlmasMovieStreams = async function (id) {
   let streams = [];
   [series_id, season, episode] = id.split(":");
   const baseURL = "http://iamnotindangeriamthedanger.website/filmgir/?i=";
-  for (let q = 1; q < 2; q++) {
+  for (let q = 1; q < 11; q++) {
       const res = await got(baseURL + `${series_id}&f=${season}&q=${q}`);
       const $ = cheerio.load(res.body);
       const title = $("div.mb-2").text();
