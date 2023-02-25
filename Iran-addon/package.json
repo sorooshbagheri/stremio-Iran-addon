@@ -1,6 +1,6 @@
 {
 	"name": "stremio-addon-DonyayeSerial",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "To stream from Iranian urls",
 	"scripts": {
 		"start": "node server.js"

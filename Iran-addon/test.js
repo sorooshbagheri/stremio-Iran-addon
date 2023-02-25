@@ -80,29 +80,46 @@ const getStreams = async function (id) {
 const getAlmasMovieStreams = async function (id) {
     let streams = [];
     [series_id, season, episode] = id.split(":");
-    const baseURL = "http://iamnotindangeriamthedanger.website/filmgir/?i=";
-    for (let q = 1; q < 2; q++) {
-        const res = await got(baseURL + `${series_id}&f=${season}&q=${q}`);
-        const $ = cheerio.load(res.body);
-        const title = $("div.mb-2").text();
-        if (title) {
-            console.log(title);
-            $("a").each((i, elem) => {
-                if (i  == (episode -1) * 2) {
-                    streams.push({
-                        title: title,
-                        url: `${elem.attribs.href}`,
-                        behaviorHints: {
-                            bingeGroup: series_id + " " + title,
-                        },
-                    });
-                }
-            });
+
+    if (season) {
+        //sereis
+        const baseURL = "http://iamnotindangeriamthedanger.website/filmgir/?i=";
+        for (let q = 1; q < 11; q++) {
+            const res = await got(baseURL + `${series_id}&f=${season}&q=${q}`);
+            const $ = cheerio.load(res.body);
+            const title = $("div.mb-2").text();
+            if (title) {
+                console.log(title);
+                $("div.my-1").each((i, elem) => {
+                    if (i == (episode - 1)) {
+                        // console.log(elem.children[0].attribs.href);
+                        streams.push({
+                            title: title,
+                            url: `${elem.children[0].attribs.href}`,
+                            behaviorHints: {
+                                bingeGroup: series_id + " " + title,
+                            },
+                        });
+                    }
+                });
+            }
         }
+    } else {
+        //movies
+        const baseURL = "https://filmgirbot.site/?showitem=";
+        const res = await got(baseURL + `${id}`);
+        const $ = cheerio.load(res.body);
+        $("div.movieLinks p a").each((i, elem) => {
+            console.log(elem.text);
+            streams.push({
+                title: elem.text,
+                url: `${elem.attribs.href}`,
+                behaviorHints: {},
+            });
+        });
     }
     console.log(streams);
     return Promise.resolve(streams);
-
 };
 
-getAlmasMovieStreams("tt9253284:1:5");
+getAlmasMovieStreams("tt3581920:1:3");
