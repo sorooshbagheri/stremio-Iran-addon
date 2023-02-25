@@ -109,12 +109,11 @@ const getAlmasMovieStreams = async function (id) {
         const baseURL = "https://filmgirbot.site/?showitem=";
         const res = await got(baseURL + `${id}`);
         const $ = cheerio.load(res.body);
-        $("div.movieLinks p a").each((i, elem) => {
-            console.log(elem.text);
+        $("div.movieLinks p").each((i, elem) => {
+            // console.log(elem);
             streams.push({
-                title: elem.text,
-                url: `${elem.attribs.href}`,
-                behaviorHints: {},
+                title: `${$(`div.movieLinks p:nth-of-type(${i+1})`).text()}`,
+                url: `${elem.children[1].attribs.href}`,
             });
         });
     }
@@ -122,4 +121,4 @@ const getAlmasMovieStreams = async function (id) {
     return Promise.resolve(streams);
 };
 
-getAlmasMovieStreams("tt3581920:1:3");
+getAlmasMovieStreams("tt10640346");

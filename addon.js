@@ -25,7 +25,7 @@ loadLib();
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.DonyayeSerial",
-    version: "0.0.4",
+    version: "0.0.5",
     catalogs: [],
     resources: ["stream"],
     types: ["movie", "series"],
@@ -156,13 +156,16 @@ const getAlmasMovieStreams = async function (id) {
         }
     } else {
       //movies
-      const baseURL = "https://filmgirbot.site/?showitem="
+      const baseURL = "https://filmgirbot.site/?showitem=";
       const res = await got(baseURL + `${id}`);
       const $ = cheerio.load(res.body);
-      const title = $("div.movieLinks a").text();
-      console.log()
-
-
+      $("div.movieLinks p").each((i, elem) => {
+          // console.log(elem);
+          streams.push({
+              title: `${$(`div.movieLinks p:nth-of-type(${i+1})`).text()}`,
+              url: `${elem.children[1].attribs.href}`,
+          });
+      });
     }
     console.log(streams);
     return Promise.resolve(streams);
