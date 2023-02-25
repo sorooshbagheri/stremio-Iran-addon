@@ -16,4 +16,4 @@ jobs:
           LIARA_TOKEN: ${{ secrets.LIARA_API_TOKEN }}
         run: |
           npm i -g @liara/cli@3
-          liara deploy --app="xenodochial-wozniak-zzkfujo5j" --api-token="$LIARA_TOKEN" --detach
+          liara deploy --app="xenodochial-wozniak-zzkfujo5j" --api-token="$LIARA_TOKEN" --detach --port=80
