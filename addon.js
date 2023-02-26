@@ -64,11 +64,13 @@ const getAlmasMovieSubs = async function (id) {
                 console.log(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
-                        // console.log(elem.children[2].attribs.href);
-                        subs.push({
-                            url: `${elem.children[2].attribs.href}`,
-                            lang: "farsi",
-                        });
+                        if (elem.children[2]) {
+                            // console.log(elem.children[2].attribs.href);
+                            subs.push({
+                                url: `${elem.children[2].attribs.href}`,
+                                lang: "farsi",
+                            });
+                        }
                     }
                 });
             }
