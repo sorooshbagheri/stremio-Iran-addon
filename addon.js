@@ -165,6 +165,7 @@ const getStreams = async function (id) {
 
 const getAlmasMovieStreams = async function (id) {
     let streams = [];
+    let subs = [];
     [series_id, season, episode] = id.split(":");
 
     if (season) {
@@ -178,11 +179,26 @@ const getAlmasMovieStreams = async function (id) {
                 console.log(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
+                        if (elem.children[2]) {
+                            // console.log(elem.children[2].attribs.href);
+                            subs.push({
+                                url: `${elem.children[2].attribs.href}`,
+                                lang: "farsi",
+                            });
+                        }
                         // console.log(elem.children[0].attribs.href);
+                        let encoding = "", size = "";
+                        if (title.includes("x265")) encoding = "x265";
+                        let _ =title.match(/\b\w+(\.\w+)*(MB|GB)\b/);
+                        if (_) size = "💾 " + _[0];
                         streams.push({
+                            name: `IranServer \n ${title.split(" ")[0]} ${encoding}`,
+                            description: `${size}\n${title}\n🔗 AlmasMovie`,
                             title: title,
                             url: `${elem.children[0].attribs.href}`,
+                            subtitles: subs,
                             behaviorHints: {
+                                notWebReady: true,
                                 bingeGroup: series_id + " " + title,
                             },
                         });
@@ -197,8 +213,15 @@ const getAlmasMovieStreams = async function (id) {
         const $ = cheerio.load(res.body);
         $("div.movieLinks p").each((i, elem) => {
             // console.log(elem);
+            const title = $(`div.movieLinks p:nth-of-type(${i + 1})`).text();
+            let encoding = "", size = "";
+            if (title.includes("x265")) encoding = "x265";
+            let _ =title.match(/\b\w+(\.\w+)*(MB|GB)\b/);
+            if (_) size = "💾 " + _[0];
             streams.push({
-                title: `${$(`div.movieLinks p:nth-of-type(${i + 1})`).text()}`,
+                name: `IranServer \n ${title.split(" ")[1]} ${encoding}`,
+                description: `${size}\n${title}\n🔗 AlmasMovie`,
+                title: title,
                 url: `${elem.children[1].attribs.href}`,
             });
         });
