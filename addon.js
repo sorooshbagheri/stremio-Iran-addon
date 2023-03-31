@@ -25,7 +25,7 @@ loadLib();
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.DonyayeSerial",
-    version: "0.0.6",
+    version: "0.0.7",
     catalogs: [],
     resources: ["stream", "subtitles"],
     types: ["movie", "series"],
