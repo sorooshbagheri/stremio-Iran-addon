@@ -27,7 +27,7 @@ loadLib();
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.DonyayeSerial",
-    version: "0.1.0",
+    version: "0.1.1",
     catalogs: [],
     resources: ["stream", "subtitles"],
     types: ["movie", "series"],
@@ -190,8 +190,8 @@ const getDonyayeSerialStreams = async function (id) {
     let subs = [];
     [series_id, season, episode] = id.split(":");
 
-    //search for page url
     if (season) {
+        //search for page url
         let res = await got(`${searchURL}&keyword=${series_id}`);
         let $ = cheerio.load(res.body);
         const pageURL = $("a")["0"].attribs.href;
@@ -249,6 +249,50 @@ const getDonyayeSerialStreams = async function (id) {
                 }
             });
         }
+    } else {
+        //search for page url
+        let res = await got(`${searchURL}&keyword=${series_id}`);
+        let $ = cheerio.load(res.body);
+        const pageURL = $("a")["0"].attribs.href;
+        console.log(
+            `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
+        );
+
+        res = await got(pageURL);
+        $ = cheerio.load(res.body);
+
+        $(".download_box a").each((i, elem) => {
+            let link = elem.attribs.href;
+            let title = link.split("/").slice(-1)[0];
+            console.log(title);
+            let encoding = "",
+                lang = "",
+                dubbed = "";
+            size = "";
+            quality = "";
+            if (/.*\bdubbed\b.*/i.test(link)) {
+                if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                    dubbed = "Dubbed";
+                    lang = "🇮🇷Fa";
+                }
+            }
+            if (elem.attribs.title) {
+                size = `💾${elem.attribs.title.split("/").slice(-1)}`;
+                if (/\b\d{3,4}p\b/.test(elem.attribs.title))
+                    quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
+            }
+            if (link.includes("x265")) encoding = "x265";
+            streams.push({
+                name: `IranServer \n ${quality} ${encoding}`,
+                description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
+                title: title,
+                url: `${link}`,
+                subtitles: subs,
+                behaviorHints: {
+                    notWebReady: true,
+                },
+            });
+        });
     }
     console.log(streams);
     return Promise.resolve(streams);
@@ -281,7 +325,7 @@ const getAlmasMovieStreams = async function (id) {
                         let encoding = "",
                             size = "";
                         if (title.includes("x265")) encoding = "x265";
-                        let _ = title.match(/\b\w+(\.\w+)*(MB|GB)\b/);
+                        let _ = title.match(/\b\w+(\.\w+)*(MB|GB)\b/); //todo support 4.8 GB in addition to 4.8GB
                         if (_) size = "💾 " + _[0];
                         streams.push({
                             name: `IranServer \n ${

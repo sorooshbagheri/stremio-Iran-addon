@@ -158,8 +158,8 @@ const getDonyayeSerialStreams = async function (id) {
     let subs = [];
     [series_id, season, episode] = id.split(":");
 
-    //search for page url
     if (season) {
+        //search for page url
         let res = await got(`${searchURL}&keyword=${series_id}`);
         let $ = cheerio.load(res.body);
         const pageURL = $("a")["0"].attribs.href;
@@ -201,7 +201,7 @@ const getDonyayeSerialStreams = async function (id) {
                             lang = "🇮🇷Fa";
                         }
                     }
-                    let quality = link.match(/\.\d{3,4}p\./)[0].slice(1,-1);
+                    let quality = link.match(/\.\d{3,4}p\./)[0].slice(1, -1);
                     if (link.includes("x265")) encoding = "x265";
                     streams.push({
                         name: `IranServer \n ${quality} ${encoding}`,
@@ -217,14 +217,53 @@ const getDonyayeSerialStreams = async function (id) {
                 }
             });
         }
+    } else {
+        //search for page url
+        let res = await got(`${searchURL}&keyword=${series_id}`);
+        let $ = cheerio.load(res.body);
+        const pageURL = $("a")["0"].attribs.href;
+        console.log(
+            `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
+        );
+
+        res = await got(pageURL);
+        $ = cheerio.load(res.body);
+
+        $(".download_box a").each((i, elem) => {
+            let link = elem.attribs.href;
+            let title = link.split("/").slice(-1)[0];
+            console.log(title);
+            let encoding = "",
+                lang = "",
+                dubbed = "";
+            size = "";
+            quality = "";
+            if (/.*\bdubbed\b.*/i.test(link)) {
+                if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                    dubbed = "Dubbed";
+                    lang = "🇮🇷Fa";
+                }
+            }
+            if (elem.attribs.title) {
+                size = `💾${elem.attribs.title.split("/").slice(-1)}`;
+                if (/\b\d{3,4}p\b/.test(elem.attribs.title))
+                    quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
+            }
+            if (link.includes("x265")) encoding = "x265";
+            streams.push({
+                name: `IranServer \n ${quality} ${encoding}`,
+                description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
+                title: title,
+                url: `${link}`,
+                subtitles: subs,
+                behaviorHints: {
+                    notWebReady: true,
+                },
+            });
+        });
     }
     console.log(streams);
     return Promise.resolve(streams);
 };
 
-let quality =
-    "The.Mandalorian.S01E01.480p.WEB-DL.Farsi.Dubbed.DonyayeSerial.mkv"
-        .match(/\.\d{3,4}p\./)[0].slice(1,-1);
-        
-console.log(quality);
-// getDonyayeSerialStreams("tt8111088:1:1");
+getDonyayeSerialStreams("tt0047478");
