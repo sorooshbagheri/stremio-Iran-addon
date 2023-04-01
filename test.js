@@ -92,7 +92,7 @@ const getAlmasMovieStreams = async function (id) {
             if (title) {
                 console.log(title);
                 $("div.my-1").each((i, elem) => {
-                    if (i == (episode - 1)) {
+                    if (i == episode - 1) {
                         // console.log(elem.children[0].attribs.href);
                         streams.push({
                             title: title,
@@ -113,7 +113,7 @@ const getAlmasMovieStreams = async function (id) {
         $("div.movieLinks p").each((i, elem) => {
             // console.log(elem);
             streams.push({
-                title: `${$(`div.movieLinks p:nth-of-type(${i+1})`).text()}`,
+                title: `${$(`div.movieLinks p:nth-of-type(${i + 1})`).text()}`,
                 url: `${elem.children[1].attribs.href}`,
             });
         });
@@ -151,4 +151,80 @@ const getAlmasMovieSubs = async function (id) {
     return Promise.resolve(subs);
 };
 
-getAlmasMovieSubs("tt13443470:1:2");
+const getDonyayeSerialStreams = async function (id) {
+    const searchURL =
+        "https://donyayeserial.online/wp-admin/admin-ajax.php?action=live_func";
+    let streams = [];
+    let subs = [];
+    [series_id, season, episode] = id.split(":");
+
+    //search for page url
+    if (season) {
+        let res = await got(`${searchURL}&keyword=${series_id}`);
+        let $ = cheerio.load(res.body);
+        const pageURL = $("a")["0"].attribs.href;
+        console.log(
+            `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
+        );
+
+        res = await got(pageURL);
+        $ = cheerio.load(res.body);
+
+        //gather links
+        let links = [];
+        console.log(`Corresponding DonyayeSerial directories are found":`);
+        $(".download_box a").each((i, elem) => {
+            let link = elem.attribs.href;
+            // console.log(link);
+            if (link.match(new RegExp("S0*" + season))) {
+                links.push(link);
+            }
+        });
+
+        //find the episode link
+        for (const dir of links) {
+            console.log("Openning ", dir, "...");
+            res = await got(dir);
+            $ = cheerio.load(res.body);
+            $(".list tbody td.n a").each((i, elem) => {
+                if (i == episode) {
+                    let link = elem.attribs.href;
+                    let encoding = "",
+                        lang = "",
+                        dubbed = "";
+                    let size = `💾 ${
+                        $(".list tbody td.s code")[episode - 1].children[0].data
+                    }`;
+                    if (/.*\bdubbed\b.*/i.test(link)) {
+                        if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                            dubbed = "Dubbed";
+                            lang = "🇮🇷Fa";
+                        }
+                    }
+                    let quality = link.match(/\.\d{3,4}p\./)[0].slice(1,-1);
+                    if (link.includes("x265")) encoding = "x265";
+                    streams.push({
+                        name: `IranServer \n ${quality} ${encoding}`,
+                        description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
+                        title: link,
+                        url: `${dir + elem.attribs.href}`,
+                        subtitles: subs,
+                        behaviorHints: {
+                            notWebReady: true,
+                            bingeGroup: series_id + ".donyayeSerial." + dir,
+                        },
+                    });
+                }
+            });
+        }
+    }
+    console.log(streams);
+    return Promise.resolve(streams);
+};
+
+let quality =
+    "The.Mandalorian.S01E01.480p.WEB-DL.Farsi.Dubbed.DonyayeSerial.mkv"
+        .match(/\.\d{3,4}p\./)[0].slice(1,-1);
+        
+console.log(quality);
+// getDonyayeSerialStreams("tt8111088:1:1");
