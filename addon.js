@@ -27,7 +27,7 @@ loadLib();
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.DonyayeSerial",
-    version: "0.1.1",
+    version: "0.1.2",
     catalogs: [],
     resources: ["stream", "subtitles"],
     types: ["movie", "series"],
@@ -187,12 +187,92 @@ const getStreamsOld = async function (id) {
     return Promise.resolve(streams);
 };
 
+const kitsuToName = async function (kitsuId) {
+    const kitsuAPIUrl = `https://kitsu.io/api/edge/anime/${kitsuId}`;
+    try {
+        const response = JSON.parse((await got(kitsuAPIUrl)).body);
+        const name = response.data.attributes.titles.en;
+        console.log(name);
+        return name;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const recursiveAddStreams = async function (
+    streams,
+    baseDir,
+    seasonFound,
+    episode
+) {
+    console.log("Openning ", baseDir, "...");
+    res = await got(baseDir);
+    $ = cheerio.load(res.body);
+    let nodes = $(".list tbody td.n a");
+    if (nodes[1].attribs.href.slice(-1) != "/") {
+        // there are no further inside directories
+        for (let i = 0; i < nodes.length; i++) {
+            const elem = nodes[i];
+            let link = elem.attribs.href;
+            if (
+                (seasonFound && i == episode) ||
+                (!seasonFound && new RegExp(`E0*${episode}[-.]`).test(link))
+            ) {
+                let encoding = "",
+                    lang = "",
+                    dubbed = "",
+                    quality = "";
+                let size = `💾 ${
+                    $(".list tbody td.s code")[i - 1].children[0].data
+                }`;
+                if (/.*dubbed.*/i.test(link)) {
+                    if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                        dubbed = "Dubbed";
+                        lang = "🇮🇷Fa";
+                    }
+                }
+                let _ = link.match(/\.\d{3,4}p\./);
+                if (_) {
+                    quality = _[0].slice(1, -1);
+                }
+                if (link.includes("x265")) encoding = "x265";
+                streams.push({
+                    name: `IranServer \n ${quality} ${encoding}`,
+                    description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
+                    title: link,
+                    url: `${baseDir + elem.attribs.href}`,
+                    behaviorHints: {
+                        notWebReady: true,
+                        bingeGroup: series_id + ".donyayeSerial." + baseDir,
+                    },
+                });
+            }
+        }
+    } else {
+        // all links in this dir are directories
+        for (let i = 0; i < nodes.length; i++) {
+            const elem = nodes[i];
+            let link = elem.attribs.href;
+            if (i > 0)
+                streams = await recursiveAddStreams(
+                    streams,
+                    baseDir + link,
+                    seasonFound,
+                    episode
+                );
+        }
+    }
+    return streams;
+};
+
 const getDonyayeSerialStreams = async function (id) {
     const searchURL =
         "https://donyayeserial.online/wp-admin/admin-ajax.php?action=live_func";
     let streams = [];
-    let subs = [];
     [series_id, season, episode] = id.split(":");
+    if (series_id == "kitsu") {
+        series_id = await kitsuToName(season);
+    }
 
     //search for page url
     let res = await got(`${searchURL}&keyword=${series_id}`);
@@ -213,52 +293,34 @@ const getDonyayeSerialStreams = async function (id) {
     if (season) {
         //gather links
         let links = [];
+        let seasonFound = false;
         console.log(`Corresponding DonyayeSerial directories are found":`);
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             // console.log(link);
             if (link.match(new RegExp("S0*" + season))) {
                 links.push(link);
+                seasonFound = true;
             }
         });
+        if (!seasonFound) {
+            $(".download_box a").each((i, elem) => {
+                let link = elem.attribs.href;
+                links.push(link);
+            });
+        }
 
         //find the episode link
         for (const dir of links) {
-            console.log("Openning ", dir, "...");
-            res = await got(dir);
-            $ = cheerio.load(res.body);
-            $(".list tbody td.n a").each((i, elem) => {
-                if (i == episode) {
-                    let link = elem.attribs.href;
-                    let encoding = "",
-                        lang = "",
-                        dubbed = "";
-                    let size = `💾 ${
-                        $(".list tbody td.s code")[episode - 1].children[0].data
-                    }`;
-                    if (/.*\bdubbed\b.*/i.test(link)) {
-                        if (/.*\bfa(rsi)\b.*/i.test(link)) {
-                            dubbed = "Dubbed";
-                            lang = "🇮🇷Fa";
-                        }
-                    }
-                    let quality = link.match(/\.\d{3,4}p\./)[0].slice(1, -1);
-                    if (link.includes("x265")) encoding = "x265";
-                    streams.push({
-                        name: `IranServer \n ${quality} ${encoding}`,
-                        description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
-                        title: link,
-                        url: `${dir + elem.attribs.href}`,
-                        subtitles: subs,
-                        behaviorHints: {
-                            notWebReady: true,
-                            bingeGroup: series_id + ".donyayeSerial." + dir,
-                        },
-                    });
-                }
-            });
+            streams = await recursiveAddStreams(
+                streams,
+                dir,
+                seasonFound,
+                episode
+            );
         }
     } else {
+        // movies
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             let title = link.split("/").slice(-1)[0];
@@ -285,14 +347,13 @@ const getDonyayeSerialStreams = async function (id) {
                 description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
                 title: title,
                 url: `${link}`,
-                subtitles: subs,
                 behaviorHints: {
                     notWebReady: true,
                 },
             });
         });
     }
-    console.log(streams);
+    // console.log(streams);
     return Promise.resolve(streams);
 };
 
@@ -363,7 +424,12 @@ const getAlmasMovieStreams = async function (id) {
             });
         });
     }
-    if (!streams.length) return Promise.reject(["Item not found in AlmasMovie database"])
+    if (!streams.length)
+        return Promise.reject(["Item not found in AlmasMovie database"]);
     console.log(streams);
     return Promise.resolve(streams);
 };
+
+// getDonyayeSerialStreams("tt7767422:2:3"); // sexEd
+// getDonyayeSerialStreams("kitsu:1555:206"); // naruto
+// getDonyayeSerialStreams("tt0047478"); // seven samurai

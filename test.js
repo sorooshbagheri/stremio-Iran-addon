@@ -151,13 +151,28 @@ const getAlmasMovieSubs = async function (id) {
     return Promise.resolve(subs);
 };
 
+const kitsuToName = async function (kitsuId) {
+    const kitsuAPIUrl = `https://kitsu.io/api/edge/anime/${kitsuId}`;
+    try {
+        const response = JSON.parse((await got(kitsuAPIUrl)).body);
+        const name = response.data.attributes.titles.en;
+        console.log(name);
+        return name;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
 const getDonyayeSerialStreams = async function (id) {
     const searchURL =
         "https://donyayeserial.online/wp-admin/admin-ajax.php?action=live_func";
     let streams = [];
-    let subs = [];
+    let kitsu = false;
     [series_id, season, episode] = id.split(":");
-
+    if (series_id == "kitsu") {
+        kitsu = true;
+        series_id = await kitsuToName(season);
+    }
     //search for page url
     let res = await got(`${searchURL}&keyword=${series_id}`);
     let $ = cheerio.load(res.body);
@@ -260,4 +275,7 @@ const getDonyayeSerialStreams = async function (id) {
     return Promise.resolve(streams);
 };
 
-getDonyayeSerialStreams("tt0047478");
+// getDonyayeSerialStreams("kitsu:1555:1");
+// getDonyayeSerialStreams("tt0047478"); // seven samurai
+let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
+console.log(/.*dubbed.*/i.test(_))
