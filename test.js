@@ -158,18 +158,23 @@ const getDonyayeSerialStreams = async function (id) {
     let subs = [];
     [series_id, season, episode] = id.split(":");
 
-    if (season) {
-        //search for page url
-        let res = await got(`${searchURL}&keyword=${series_id}`);
-        let $ = cheerio.load(res.body);
-        const pageURL = $("a")["0"].attribs.href;
+    //search for page url
+    let res = await got(`${searchURL}&keyword=${series_id}`);
+    let $ = cheerio.load(res.body);
+    let pageURL;
+    try {
+        pageURL = $("a")["0"].attribs.href;
         console.log(
             `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
         );
+    } catch (error) {
+        console.log("Item not found in DonyayeSerial database");
+        return Promise.reject(["Item not found in DonyayeSerial database"]);
+    }
 
-        res = await got(pageURL);
-        $ = cheerio.load(res.body);
-
+    res = await got(pageURL);
+    $ = cheerio.load(res.body);
+    if (season) {
         //gather links
         let links = [];
         console.log(`Corresponding DonyayeSerial directories are found":`);
@@ -218,17 +223,6 @@ const getDonyayeSerialStreams = async function (id) {
             });
         }
     } else {
-        //search for page url
-        let res = await got(`${searchURL}&keyword=${series_id}`);
-        let $ = cheerio.load(res.body);
-        const pageURL = $("a")["0"].attribs.href;
-        console.log(
-            `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
-        );
-
-        res = await got(pageURL);
-        $ = cheerio.load(res.body);
-
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             let title = link.split("/").slice(-1)[0];
