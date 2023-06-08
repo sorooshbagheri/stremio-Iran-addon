@@ -1,6 +1,18 @@
 const got = (...args) => import("got").then(({ default: got }) => got(...args));
 const cheerio = require("cheerio");
 const { get } = require("cheerio/lib/api/traversing");
+const log = require('node-file-logger');
+
+const options = {
+    folderPath: "./logs/",
+    dateBasedFileNaming: true,
+    fileNamePrefix: "DailyLogs_",
+    fileNameExtension: ".log",
+    dateFormat: "YYYY_MM_D",
+    timeFormat: "h:mm:ss A",
+};
+
+log.SetUserOptions(options);
 
 const getStreams = async function (id) {
     let streams = [];
@@ -277,5 +289,7 @@ const getDonyayeSerialStreams = async function (id) {
 
 // getDonyayeSerialStreams("kitsu:1555:1");
 // getDonyayeSerialStreams("tt0047478"); // seven samurai
-let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
-console.log(/.*dubbed.*/i.test(_))
+// let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
+// console.log(/.*dubbed.*/i.test(_))
+
+log.Info('test1')
