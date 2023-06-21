@@ -5,20 +5,22 @@ const cheerio = require("cheerio");
 const fs = require("fs");
 const { resolve } = require("path");
 // const util = require("util");
-const log = require('node-file-logger');
+const winston = require("winston");
 
-const options = {
-    folderPath: "./logs/",
-    dateBasedFileNaming: false,
-    fileName: 'All_Logs',   
-    // fileNamePrefix: "DailyLogs_",
-    fileNameExtension: ".log",
-    dateFormat: "YYYY_MM_D",
-    timeFormat: "h:mm:ss A",
-};
-
-log.SetUserOptions(options);
-
+const logger = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
+    transports: [
+        // new winston.transports.Console({}),
+        new winston.transports.Http({
+            host: "script.google.com",
+            path: "/macros/s/AKfycbz2USb0S2F4kOQXEoTn4LJt1F17w2oy1tqd9x0RKdkmPQ13SnnZti1LN1MESB32t9z6/exec",
+            ssl: true,
+        }),
+    ],
+});
 
 var lib = {};
 
@@ -32,7 +34,7 @@ const loadLib = () => {
             return;
         }
         console.log("Library imported successfully.");
-        log.Info("Library imported successfully.");
+        logger.info("Library imported successfully.");
         lib = JSON.parse(jsonString);
         // console.log(lib);
     });
@@ -54,7 +56,7 @@ const builder = new addonBuilder(manifest);
 
 builder.defineStreamHandler(({ type, id }) => {
     console.log("request for streams: " + type + " " + id);
-    log.Info("request for streams: " + type + " " + id);
+    logger.info("request for streams: " + type + " " + id);
     // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md
     [prefix, series, episode] = id.split(":");
 
@@ -79,7 +81,7 @@ const getAlmasMovieSubs = async function (id) {
             const title = $("div.mb-2").text();
             if (title) {
                 console.log(title);
-                log.Info(title);
+                logger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -94,7 +96,7 @@ const getAlmasMovieSubs = async function (id) {
         }
     }
     console.log(subs);
-    log.Info(subs);
+    logger.info(subs);
     return Promise.resolve(subs);
 };
 
@@ -107,7 +109,7 @@ const getStreams = async function (id) {
     promises.push(getDonyayeSerialStreams(id));
     let results = await Promise.allSettled(promises);
     console.log(results);
-    log.Info(results);
+    logger.info(results);
     for (let prom = 0; prom < results.length; prom++) {
         if (results[prom].status == "fulfilled") {
             for (
@@ -120,7 +122,7 @@ const getStreams = async function (id) {
         }
     }
     console.log(streams);
-    log.Info(streams);    
+    logger.info(streams);
     // console.log(util.inspect(results, false, null, true /* enable colors */))
     return Promise.resolve(streams);
 };
@@ -132,7 +134,7 @@ const getStreamsOld = async function (id) {
     if (lib[id]) {
         streams = lib[id];
         console.log("Retrieved from library:", streams);
-        log.Info("Retrieved from library:", streams);
+        logger.info("Retrieved from library:", streams);
         return Promise.resolve(streams);
     }
 
@@ -204,7 +206,7 @@ const getStreamsOld = async function (id) {
         }
     }
     console.log(streams);
-    log.Info(streams);
+    logger.info(streams);
     return Promise.resolve(streams);
 };
 
@@ -214,11 +216,11 @@ const kitsuToName = async function (kitsuId) {
         const response = JSON.parse((await got(kitsuAPIUrl)).body);
         const name = response.data.attributes.titles.en;
         console.log(name);
-        log.Info(name);
+        logger.info(name);
         return name;
     } catch (error) {
         console.error(error);
-        log.Error(error);
+        logger.Error(error);
     }
 };
 
@@ -229,7 +231,7 @@ const recursiveAddStreams = async function (
     episode
 ) {
     console.log("Openning ", baseDir, "...");
-    log.Info("Openning ", baseDir, "...");
+    logger.info("Openning ", baseDir, "...");
     res = await got(baseDir);
     $ = cheerio.load(res.body);
     let nodes = $(".list tbody td.n a");
@@ -307,10 +309,10 @@ const getDonyayeSerialStreams = async function (id) {
         console.log(
             `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
         );
-        log.Info(
+        logger.info(
             `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
         );
-    } catch (error) {      
+    } catch (error) {
         return Promise.reject(["Item not found in DonyayeSerial database"]);
     }
 
@@ -321,7 +323,7 @@ const getDonyayeSerialStreams = async function (id) {
         let links = [];
         let seasonFound = false;
         console.log(`Corresponding DonyayeSerial directories are found":`);
-        log.Info(`Corresponding DonyayeSerial directories are found":`);
+        logger.info(`Corresponding DonyayeSerial directories are found":`);
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             // console.log(link);
@@ -352,7 +354,7 @@ const getDonyayeSerialStreams = async function (id) {
             let link = elem.attribs.href;
             let title = link.split("/").slice(-1)[0];
             console.log(title);
-            log.Info(title);
+            logger.info(title);
             let encoding = "",
                 lang = "",
                 dubbed = "";
@@ -399,7 +401,7 @@ const getAlmasMovieStreams = async function (id) {
             const title = $("div.mb-2").text();
             if (title) {
                 console.log(title);
-                log.Info(title);
+                logger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -454,7 +456,7 @@ const getAlmasMovieStreams = async function (id) {
     if (!streams.length)
         return Promise.reject(["Item not found in AlmasMovie database"]);
     console.log(streams);
-    log.Info(streams);
+    logger.info(streams);
     return Promise.resolve(streams);
 };
 

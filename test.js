@@ -1,18 +1,26 @@
 const got = (...args) => import("got").then(({ default: got }) => got(...args));
 const cheerio = require("cheerio");
 const { get } = require("cheerio/lib/api/traversing");
-const log = require('node-file-logger');
 
-const options = {
-    folderPath: "./logs/",
-    dateBasedFileNaming: true,
-    fileNamePrefix: "DailyLogs_",
-    fileNameExtension: ".log",
-    dateFormat: "YYYY_MM_D",
-    timeFormat: "h:mm:ss A",
-};
+const { createLogger, format, transports } = require('winston');
+const { combine,simple, json, timestamp, splat, prettyPrint } = format;
 
-log.SetUserOptions(options);
+
+const logger = createLogger({
+    format: combine(
+        timestamp(),
+        json()
+      ),
+    transports: [
+        new transports.Console({
+        }),
+        new transports.Http({
+            host: "script.google.com",
+            path: '/macros/s/AKfycbz2USb0S2F4kOQXEoTn4LJt1F17w2oy1tqd9x0RKdkmPQ13SnnZti1LN1MESB32t9z6/exec',
+            ssl: true
+        })
+    ]
+});
 
 const getStreams = async function (id) {
     let streams = [];
@@ -179,12 +187,11 @@ const getDonyayeSerialStreams = async function (id) {
     const searchURL =
         "https://donyayeserial.online/wp-admin/admin-ajax.php?action=live_func";
     let streams = [];
-    let kitsu = false;
     [series_id, season, episode] = id.split(":");
     if (series_id == "kitsu") {
-        kitsu = true;
         series_id = await kitsuToName(season);
     }
+
     //search for page url
     let res = await got(`${searchURL}&keyword=${series_id}`);
     let $ = cheerio.load(res.body);
@@ -194,8 +201,10 @@ const getDonyayeSerialStreams = async function (id) {
         console.log(
             `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
         );
+        logger.info(
+            `Corresponding DonyayeSerial webpage is found:\n${pageURL}`
+        );
     } catch (error) {
-        console.log("Item not found in DonyayeSerial database");
         return Promise.reject(["Item not found in DonyayeSerial database"]);
     }
 
@@ -204,56 +213,40 @@ const getDonyayeSerialStreams = async function (id) {
     if (season) {
         //gather links
         let links = [];
+        let seasonFound = false;
         console.log(`Corresponding DonyayeSerial directories are found":`);
+        logger.info(`Corresponding DonyayeSerial directories are found":`);
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             // console.log(link);
             if (link.match(new RegExp("S0*" + season))) {
                 links.push(link);
+                seasonFound = true;
             }
         });
+        if (!seasonFound) {
+            $(".download_box a").each((i, elem) => {
+                let link = elem.attribs.href;
+                links.push(link);
+            });
+        }
 
         //find the episode link
         for (const dir of links) {
-            console.log("Openning ", dir, "...");
-            res = await got(dir);
-            $ = cheerio.load(res.body);
-            $(".list tbody td.n a").each((i, elem) => {
-                if (i == episode) {
-                    let link = elem.attribs.href;
-                    let encoding = "",
-                        lang = "",
-                        dubbed = "";
-                    let size = `💾 ${
-                        $(".list tbody td.s code")[episode - 1].children[0].data
-                    }`;
-                    if (/.*\bdubbed\b.*/i.test(link)) {
-                        if (/.*\bfa(rsi)\b.*/i.test(link)) {
-                            dubbed = "Dubbed";
-                            lang = "🇮🇷Fa";
-                        }
-                    }
-                    let quality = link.match(/\.\d{3,4}p\./)[0].slice(1, -1);
-                    if (link.includes("x265")) encoding = "x265";
-                    streams.push({
-                        name: `IranServer \n ${quality} ${encoding}`,
-                        description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
-                        title: link,
-                        url: `${dir + elem.attribs.href}`,
-                        subtitles: subs,
-                        behaviorHints: {
-                            notWebReady: true,
-                            bingeGroup: series_id + ".donyayeSerial." + dir,
-                        },
-                    });
-                }
-            });
+            streams = await recursiveAddStreams(
+                streams,
+                dir,
+                seasonFound,
+                episode
+            );
         }
     } else {
+        // movies
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
             let title = link.split("/").slice(-1)[0];
             console.log(title);
+            logger.info(title);
             let encoding = "",
                 lang = "",
                 dubbed = "";
@@ -276,20 +269,21 @@ const getDonyayeSerialStreams = async function (id) {
                 description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
                 title: title,
                 url: `${link}`,
-                subtitles: subs,
                 behaviorHints: {
                     notWebReady: true,
                 },
             });
         });
     }
-    console.log(streams);
+    // console.log(streams);
+    logger.info(streams);
     return Promise.resolve(streams);
 };
 
 // getDonyayeSerialStreams("kitsu:1555:1");
 // getDonyayeSerialStreams("tt0047478"); // seven samurai
+getDonyayeSerialStreams("tt0068646"); // godfather
 // let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
 // console.log(/.*dubbed.*/i.test(_))
 
-log.Info('test1')
+logger.info('{test1, {object: test2}}')
