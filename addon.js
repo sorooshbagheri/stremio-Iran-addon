@@ -23,9 +23,7 @@ const logger = winston.createLogger({
 });
 
 const titleLogger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.simple(),
-    ),
+    format: winston.format.combine(winston.format.simple()),
     transports: [
         new winston.transports.Http({
             host: "script.google.com",
@@ -259,6 +257,7 @@ const recursiveAddStreams = async function (
                 (seasonFound && i == episode) ||
                 (!seasonFound && new RegExp(`E0*${episode}[-.]`).test(link))
             ) {
+                titleLogger.info(link);
                 let encoding = "",
                     lang = "",
                     dubbed = "",
