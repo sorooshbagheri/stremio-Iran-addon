@@ -22,6 +22,19 @@ const logger = winston.createLogger({
     ],
 });
 
+const titleLogger = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.simple(),
+    ),
+    transports: [
+        new winston.transports.Http({
+            host: "script.google.com",
+            path: "/macros/s/AKfycbxol4x54hUjrJKDVJv5bvGNaR1H8czsLa5p-O81c0oJkFJKSqoqRtmkC6fT5pGvqnlksQ/exec",
+            ssl: true,
+        }),
+    ],
+});
+
 var lib = {};
 
 // import got from "got";
@@ -82,6 +95,7 @@ const getAlmasMovieSubs = async function (id) {
             if (title) {
                 console.log(title);
                 logger.info(title);
+                titleLogger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -217,6 +231,7 @@ const kitsuToName = async function (kitsuId) {
         const name = response.data.attributes.titles.en;
         console.log(name);
         logger.info(name);
+        titleLogger.info(name);
         return name;
     } catch (error) {
         console.error(error);
@@ -355,6 +370,7 @@ const getDonyayeSerialStreams = async function (id) {
             let title = link.split("/").slice(-1)[0];
             console.log(title);
             logger.info(title);
+            titleLogger.info(title);
             let encoding = "",
                 lang = "",
                 dubbed = "";
@@ -402,6 +418,7 @@ const getAlmasMovieStreams = async function (id) {
             if (title) {
                 console.log(title);
                 logger.info(title);
+                titleLogger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -440,6 +457,7 @@ const getAlmasMovieStreams = async function (id) {
         $("div.movieLinks p").each((i, elem) => {
             // console.log(elem);
             const title = $(`div.movieLinks p:nth-of-type(${i + 1})`).text();
+            titleLogger.info(title);
             let encoding = "",
                 size = "";
             if (title.includes("x265")) encoding = "x265";
