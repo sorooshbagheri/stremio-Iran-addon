@@ -2,24 +2,33 @@ const got = (...args) => import("got").then(({ default: got }) => got(...args));
 const cheerio = require("cheerio");
 const { get } = require("cheerio/lib/api/traversing");
 
-const { createLogger, format, transports } = require('winston');
-const { combine,simple, json, timestamp, splat, prettyPrint } = format;
+const winston = require("winston");
 
-
-const logger = createLogger({
-    format: combine(
-        timestamp(),
-        json()
-      ),
+const logger = winston.createLogger({
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
     transports: [
-        new transports.Console({
-        }),
-        new transports.Http({
+        // new winston.transports.Console({}),
+        new winston.transports.Http({
             host: "script.google.com",
-            path: '/macros/s/AKfycbz2USb0S2F4kOQXEoTn4LJt1F17w2oy1tqd9x0RKdkmPQ13SnnZti1LN1MESB32t9z6/exec',
-            ssl: true
-        })
-    ]
+            path: "/macros/s/AKfycbz2USb0S2F4kOQXEoTn4LJt1F17w2oy1tqd9x0RKdkmPQ13SnnZti1LN1MESB32t9z6/exec",
+            // ssl: true,
+        }),
+    ],
+});
+
+const titleLogger = winston.createLogger({
+    format: winston.format.combine(winston.format.simple()),
+    transports: [
+        new winston.transports.Console({}),
+        // new winston.transports.Http({
+        //     host: "script.google.com",
+        //     path: "/macros/s/AKfycbxol4x54hUjrJKDVJv5bvGNaR1H8czsLa5p-O81c0oJkFJKSqoqRtmkC6fT5pGvqnlksQ/exec",
+        //     ssl: true,
+        // }),
+    ],
 });
 
 const getStreams = async function (id) {
@@ -171,16 +180,72 @@ const getAlmasMovieSubs = async function (id) {
     return Promise.resolve(subs);
 };
 
-const kitsuToName = async function (kitsuId) {
-    const kitsuAPIUrl = `https://kitsu.io/api/edge/anime/${kitsuId}`;
-    try {
-        const response = JSON.parse((await got(kitsuAPIUrl)).body);
-        const name = response.data.attributes.titles.en;
-        console.log(name);
-        return name;
-    } catch (error) {
-        console.error(error);
+const recursiveAddStreams = async function (
+    streams,
+    baseDir,
+    seasonFound,
+    episode
+) {
+    console.log("Openning ", baseDir, "...");
+    logger.info("Openning ", baseDir, "...");
+    res = await got(baseDir);
+    $ = cheerio.load(res.body);
+    let nodes = $(".list tbody td.n a");
+    if (nodes[1].attribs.href.slice(-1) != "/") {
+        // there are no further inside directories
+        for (let i = 0; i < nodes.length; i++) {
+            const elem = nodes[i];
+            let link = elem.attribs.href;
+            if (
+                (seasonFound && i == episode) ||
+                (!seasonFound && new RegExp(`E0*${episode}[-.]`).test(link))
+            ) {
+                titleLogger.info(link);
+                let encoding = "",
+                    lang = "",
+                    dubbed = "",
+                    quality = "";
+                let size = `💾 ${
+                    $(".list tbody td.s code")[i - 1].children[0].data
+                }`;
+                if (/.*dubbed.*/i.test(link)) {
+                    if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                        dubbed = "Dubbed";
+                        lang = "🇮🇷Fa";
+                    }
+                }
+                let _ = link.match(/\.\d{3,4}p\./);
+                if (_) {
+                    quality = _[0].slice(1, -1);
+                }
+                if (link.includes("x265")) encoding = "x265";
+                streams.push({
+                    name: `IranServer \n ${quality} ${encoding}`,
+                    description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
+                    title: link,
+                    url: `${baseDir + elem.attribs.href}`,
+                    behaviorHints: {
+                        notWebReady: true,
+                        bingeGroup: series_id + ".donyayeSerial." + baseDir,
+                    },
+                });
+            }
+        }
+    } else {
+        // all links in this dir are directories
+        for (let i = 0; i < nodes.length; i++) {
+            const elem = nodes[i];
+            let link = elem.attribs.href;
+            if (i > 0)
+                streams = await recursiveAddStreams(
+                    streams,
+                    baseDir + link,
+                    seasonFound,
+                    episode
+                );
+        }
     }
+    return streams;
 };
 
 const getDonyayeSerialStreams = async function (id) {
@@ -244,46 +309,47 @@ const getDonyayeSerialStreams = async function (id) {
         // movies
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
-            let title = link.split("/").slice(-1)[0];
-            console.log(title);
-            logger.info(title);
-            let encoding = "",
-                lang = "",
-                dubbed = "";
-            size = "";
-            quality = "";
-            if (/.*\bdubbed\b.*/i.test(link)) {
-                if (/.*\bfa(rsi)\b.*/i.test(link)) {
-                    dubbed = "Dubbed";
-                    lang = "🇮🇷Fa";
+            if (link.slice(-1) != "/") {
+                let title = link.split("/").slice(-1)[0];
+                console.log(title);
+                logger.info(title);
+                titleLogger.info(title);
+                let encoding = "",
+                    lang = "",
+                    dubbed = "";
+                size = "";
+                quality = "";
+                if (/.*\bdubbed\b.*/i.test(link)) {
+                    if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                        dubbed = "Dubbed";
+                        lang = "🇮🇷Fa";
+                    }
                 }
+                if (elem.attribs.title) {
+                    size = `💾${elem.attribs.title.split("/").slice(-1)}`;
+                    if (/\b\d{3,4}p\b/.test(elem.attribs.title))
+                        quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
+                }
+                if (link.includes("x265")) encoding = "x265";
+                streams.push({
+                    name: `IranServer \n ${quality} ${encoding}`,
+                    description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
+                    title: title,
+                    url: `${link}`,
+                    behaviorHints: {
+                        notWebReady: true,
+                    },
+                });
             }
-            if (elem.attribs.title) {
-                size = `💾${elem.attribs.title.split("/").slice(-1)}`;
-                if (/\b\d{3,4}p\b/.test(elem.attribs.title))
-                    quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
-            }
-            if (link.includes("x265")) encoding = "x265";
-            streams.push({
-                name: `IranServer \n ${quality} ${encoding}`,
-                description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
-                title: title,
-                url: `${link}`,
-                behaviorHints: {
-                    notWebReady: true,
-                },
-            });
         });
     }
-    // console.log(streams);
-    logger.info(streams);
+    console.log(streams);
     return Promise.resolve(streams);
 };
 
 // getDonyayeSerialStreams("kitsu:1555:1");
 // getDonyayeSerialStreams("tt0047478"); // seven samurai
-getDonyayeSerialStreams("tt0068646"); // godfather
+// getDonyayeSerialStreams("tt0068646"); // godfather
+getDonyayeSerialStreams("tt4633694"); // spiderman
 // let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
 // console.log(/.*dubbed.*/i.test(_))
-
-logger.info('{test1, {object: test2}}')

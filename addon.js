@@ -55,7 +55,7 @@ loadLib();
 // Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
     id: "community.DonyayeSerial",
-    version: "0.1.2",
+    version: "0.1.3",
     catalogs: [],
     resources: ["stream", "subtitles"],
     types: ["movie", "series"],
@@ -93,7 +93,7 @@ const getAlmasMovieSubs = async function (id) {
             if (title) {
                 console.log(title);
                 logger.info(title);
-                titleLogger.info(title);
+                // titleLogger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -366,36 +366,38 @@ const getDonyayeSerialStreams = async function (id) {
         // movies
         $(".download_box a").each((i, elem) => {
             let link = elem.attribs.href;
-            let title = link.split("/").slice(-1)[0];
-            console.log(title);
-            logger.info(title);
-            titleLogger.info(title);
-            let encoding = "",
-                lang = "",
-                dubbed = "";
-            size = "";
-            quality = "";
-            if (/.*\bdubbed\b.*/i.test(link)) {
-                if (/.*\bfa(rsi)\b.*/i.test(link)) {
-                    dubbed = "Dubbed";
-                    lang = "🇮🇷Fa";
+            if (link.slice(-1) != "/") {
+                let title = link.split("/").slice(-1)[0];
+                console.log(title);
+                logger.info(title);
+                titleLogger.info(title);
+                let encoding = "",
+                    lang = "",
+                    dubbed = "";
+                size = "";
+                quality = "";
+                if (/.*\bdubbed\b.*/i.test(link)) {
+                    if (/.*\bfa(rsi)\b.*/i.test(link)) {
+                        dubbed = "Dubbed";
+                        lang = "🇮🇷Fa";
+                    }
                 }
+                if (elem.attribs.title) {
+                    size = `💾${elem.attribs.title.split("/").slice(-1)}`;
+                    if (/\b\d{3,4}p\b/.test(elem.attribs.title))
+                        quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
+                }
+                if (link.includes("x265")) encoding = "x265";
+                streams.push({
+                    name: `IranServer \n ${quality} ${encoding}`,
+                    description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
+                    title: title,
+                    url: `${link}`,
+                    behaviorHints: {
+                        notWebReady: true,
+                    },
+                });
             }
-            if (elem.attribs.title) {
-                size = `💾${elem.attribs.title.split("/").slice(-1)}`;
-                if (/\b\d{3,4}p\b/.test(elem.attribs.title))
-                    quality = elem.attribs.title.match(/\b\d{3,4}p\b/)[0];
-            }
-            if (link.includes("x265")) encoding = "x265";
-            streams.push({
-                name: `IranServer \n ${quality} ${encoding}`,
-                description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
-                title: title,
-                url: `${link}`,
-                behaviorHints: {
-                    notWebReady: true,
-                },
-            });
         });
     }
     // console.log(streams);
@@ -417,7 +419,6 @@ const getAlmasMovieStreams = async function (id) {
             if (title) {
                 console.log(title);
                 logger.info(title);
-                titleLogger.info(title);
                 $("div.my-1").each((i, elem) => {
                     if (i == episode - 1) {
                         if (elem.children[2]) {
@@ -431,13 +432,15 @@ const getAlmasMovieStreams = async function (id) {
                         if (title.includes("x265")) encoding = "x265";
                         let _ = title.match(/\b\w+(\.\w+)*(MB|GB)\b/); //todo support 4.8 GB in addition to 4.8GB
                         if (_) size = "💾 " + _[0];
+                        let url = elem.children[0].attribs.href;
+                        titleLogger.info("AlmasMovie." + url.split("/").pop());
                         streams.push({
                             name: `IranServer \n ${
                                 title.split(" ")[0]
                             } ${encoding}`,
                             description: `${size}\n${title}\n🔗 AlmasMovie`,
                             title: title,
-                            url: `${elem.children[0].attribs.href}`,
+                            url: url,
                             subtitles: subs,
                             behaviorHints: {
                                 notWebReady: true,
@@ -456,17 +459,18 @@ const getAlmasMovieStreams = async function (id) {
         $("div.movieLinks p").each((i, elem) => {
             // console.log(elem);
             const title = $(`div.movieLinks p:nth-of-type(${i + 1})`).text();
-            titleLogger.info(title);
             let encoding = "",
                 size = "";
             if (title.includes("x265")) encoding = "x265";
             let _ = title.match(/\b\w+(\.\w+)*(MB|GB)\b/);
             if (_) size = "💾 " + _[0];
+            let url = elem.children[1].attribs.href;
+            titleLogger.info(url.split("/").pop() + title);
             streams.push({
                 name: `IranServer \n ${title.split(" ")[1]} ${encoding}`,
                 description: `${size}\n${title}\n🔗 AlmasMovie`,
                 title: title,
-                url: `${elem.children[1].attribs.href}`,
+                url: url,
             });
         });
     }
