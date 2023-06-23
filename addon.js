@@ -244,11 +244,11 @@ const recursiveAddStreams = async function (
     episode
 ) {
     console.log("Openning ", baseDir, "...");
-    logger.info("Openning ", baseDir, "...");
+    logger.info("Openning " + baseDir + "...");
     res = await got(baseDir);
     $ = cheerio.load(res.body);
     let nodes = $(".list tbody td.n a");
-    if (nodes[1].attribs.href.slice(-1) != "/") {
+    if (nodes[1] && nodes[1].attribs.href.slice(-1) != "/") {
         // there are no further inside directories
         for (let i = 0; i < nodes.length; i++) {
             const elem = nodes[i];

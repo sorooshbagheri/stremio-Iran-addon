@@ -107,6 +107,21 @@ const getStreams = async function (id) {
     return Promise.resolve(streams);
 };
 
+const kitsuToName = async function (kitsuId) {
+    const kitsuAPIUrl = `https://kitsu.io/api/edge/anime/${kitsuId}`;
+    try {
+        const response = JSON.parse((await got(kitsuAPIUrl)).body);
+        const name = response.data.attributes.titles.en;
+        console.log(name);
+        logger.info(name);
+        titleLogger.info(name);
+        return name;
+    } catch (error) {
+        console.error(error);
+        logger.Error(error);
+    }
+};
+
 const getAlmasMovieStreams = async function (id) {
     let streams = [];
     [series_id, season, episode] = id.split(":");
@@ -187,11 +202,11 @@ const recursiveAddStreams = async function (
     episode
 ) {
     console.log("Openning ", baseDir, "...");
-    logger.info("Openning ", baseDir, "...");
+    logger.info("Openning " + baseDir + "...");
     res = await got(baseDir);
     $ = cheerio.load(res.body);
     let nodes = $(".list tbody td.n a");
-    if (nodes[1].attribs.href.slice(-1) != "/") {
+    if (nodes[1] && nodes[1].attribs.href.slice(-1) != "/") {
         // there are no further inside directories
         for (let i = 0; i < nodes.length; i++) {
             const elem = nodes[i];
@@ -347,9 +362,9 @@ const getDonyayeSerialStreams = async function (id) {
     return Promise.resolve(streams);
 };
 
-// getDonyayeSerialStreams("kitsu:1555:1");
+getDonyayeSerialStreams("kitsu:1555:122");
 // getDonyayeSerialStreams("tt0047478"); // seven samurai
 // getDonyayeSerialStreams("tt0068646"); // godfather
-getDonyayeSerialStreams("tt4633694"); // spiderman
+// getDonyayeSerialStreams("tt4633694"); // spiderman
 // let _ ="https://dls5.top-movies2filmha.tk/DonyayeSerial/series/Naruto.Shippuden/Dubbed/0001-0050/720p/Naruto.Shippuden.S01E001-002.HDTV.720p.x264.Dubbed.FA.mkv"
 // console.log(/.*dubbed.*/i.test(_))
