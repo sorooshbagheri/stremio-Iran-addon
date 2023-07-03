@@ -282,7 +282,7 @@ const recursiveAddStreams = async function (
                     title: link,
                     url: `${baseDir + elem.attribs.href}`,
                     behaviorHints: {
-                        notWebReady: true,
+                        // notWebReady: true,
                         bingeGroup: series_id + ".donyayeSerial." + baseDir,
                     },
                 });
@@ -394,7 +394,7 @@ const getDonyayeSerialStreams = async function (id) {
                     title: title,
                     url: `${link}`,
                     behaviorHints: {
-                        notWebReady: true,
+                        // notWebReady: true,
                     },
                 });
             }
@@ -443,7 +443,7 @@ const getAlmasMovieStreams = async function (id) {
                             url: url,
                             subtitles: subs,
                             behaviorHints: {
-                                notWebReady: true,
+                                // notWebReady: true,
                                 bingeGroup: series_id + ".AlmasMovie." + title,
                             },
                         });
