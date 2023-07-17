@@ -307,7 +307,7 @@ const recursiveAddStreams = async function (
 
 const getDonyayeSerialStreams = async function (id) {
     const searchURL =
-        "https://donyayeserial.website/wp-admin/admin-ajax.php?action=live_func";
+        "https://donyayeserial.pw/wp-admin/admin-ajax.php?action=live_func";
     let streams = [];
     [series_id, season, episode] = id.split(":");
     if (series_id == "kitsu") {
