@@ -37,7 +37,7 @@ If you use `npm start -- --launch`, the addon will launch at https://staging.str
 ### How to Install Addon in Stremio
 
 This is the currently deployed url of the addon:
-![click to install](https://xenodochial-wozniak-zzkfujo5j.iran.liara.run)
+[click to install](https://xenodochial-wozniak-zzkfujo5j.iran.liara.run)
 
 Follow the 2 steps showcased in this image:
 
