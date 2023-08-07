@@ -315,7 +315,11 @@ const getDonyayeSerialStreams = async function (id) {
     }
 
     //search for page url
-    let res = await got(`${searchURL}&keyword=${series_id}`);
+    let res = await got(`${searchURL}&keyword=${series_id}`, {
+        timeout: {
+            request: 10000,
+        },
+    });
     let $ = cheerio.load(res.body);
     let pageURL;
     try {
@@ -413,7 +417,11 @@ const getAlmasMovieStreams = async function (id) {
         //sereis
         const baseURL = "http://iamnotindangeriamthedanger.website/filmgir/?i=";
         for (let q = 1; q < 11; q++) {
-            const res = await got(baseURL + `${series_id}&f=${season}&q=${q}`);
+            const res = await got(baseURL + `${series_id}&f=${season}&q=${q}`, {
+                timeout: {
+                    request: 10000,
+                },
+            });
             const $ = cheerio.load(res.body);
             const title = $("div.mb-2").text();
             if (title) {
