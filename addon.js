@@ -118,7 +118,7 @@ const getStreams = async function (id) {
     let promises = [];
     let streams = [];
     promises.push(getAlmasMovieStreams(id));
-    promises.push(getDonyayeSerialStreams(id));
+//    promises.push(getDonyayeSerialStreams(id));
     let results = await Promise.allSettled(promises);
     console.log(results);
     logger.info(results);
