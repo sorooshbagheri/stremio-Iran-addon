@@ -160,7 +160,7 @@ const getStreamsOld = async function (id) {
         ];
         streams = [
             {
-                title: "1080p x265 WEBRip AnimeRG mkv",
+                description: "1080p x265 WEBRip AnimeRG mkv",
                 url: `${baseURL}${range[0]}-${
                     range[1]
                 }/1080p.x265.WEBRip/Naruto.Shippuden.${episode.padStart(
@@ -173,7 +173,7 @@ const getStreamsOld = async function (id) {
                 },
             },
             {
-                title: "720p x265 mkv",
+                description: "720p x265 mkv",
                 url: `${baseURL}${range[0]}-${
                     range[1]
                 }/720p.x265/Naruto.Shippuden.${episode.padStart(
@@ -203,7 +203,7 @@ const getStreamsOld = async function (id) {
                 ) {
                     streams = [
                         {
-                            title: "DVDRip-jlw mkv",
+                            description: "DVDRip-jlw mkv",
                             url: `${baseURL}S${season.padStart(
                                 2,
                                 "0"
@@ -279,7 +279,6 @@ const recursiveAddStreams = async function (
                 streams.push({
                     name: `IranServer \n ${quality} ${encoding}`,
                     description: `${size} ${lang} ${dubbed}\n${link}\n🔗 DonyayeSerial`,
-                    title: link,
                     url: `${baseDir + elem.attribs.href}`,
                     behaviorHints: {
                         // notWebReady: true,
@@ -395,7 +394,6 @@ const getDonyayeSerialStreams = async function (id) {
                 streams.push({
                     name: `IranServer \n ${quality} ${encoding}`,
                     description: `${size} ${lang} ${dubbed}\n${title}\n🔗 DonyayeSerial`,
-                    title: title,
                     url: `${link}`,
                     behaviorHints: {
                         // notWebReady: true,
@@ -447,7 +445,6 @@ const getAlmasMovieStreams = async function (id) {
                                 title.split(" ")[0]
                             } ${encoding}`,
                             description: `${size}\n${title}\n🔗 AlmasMovie`,
-                            // title: title,
                             url: url,
                             subtitles: subs,
                             behaviorHints: {
@@ -477,7 +474,6 @@ const getAlmasMovieStreams = async function (id) {
             streams.push({
                 name: `IranServer \n ${title.split(" ")[1]} ${encoding}`,
                 description: `${size}\n${title}\n🔗 AlmasMovie`,
-                title: title,
                 url: url,
             });
         });
