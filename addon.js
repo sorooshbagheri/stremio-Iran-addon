@@ -447,7 +447,7 @@ const getAlmasMovieStreams = async function (id) {
                                 title.split(" ")[0]
                             } ${encoding}`,
                             description: `${size}\n${title}\n🔗 AlmasMovie`,
-                            title: title,
+                            // title: title,
                             url: url,
                             subtitles: subs,
                             behaviorHints: {
